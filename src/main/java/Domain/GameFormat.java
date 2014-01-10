@@ -1,4 +1,4 @@
-package Beans;
+package Domain;
 
 public enum GameFormat {
     CASH, TOURNAMENT;

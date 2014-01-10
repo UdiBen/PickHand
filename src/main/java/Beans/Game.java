@@ -1,5 +1,7 @@
 package Beans;
 
+import Domain.GameFormat;
+
 public class Game {
     public long id;
     public String videoLink;

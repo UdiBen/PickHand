@@ -1,4 +1,4 @@
-package Beans;
+package Domain;
 
 public enum ActionType {
     FOLD, CHECK, RAISE

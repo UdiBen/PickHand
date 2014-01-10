@@ -1,5 +1,8 @@
 package Beans;
 
+import Domain.PlayerInRound;
+import Domain.Round;
+
 import java.util.List;
 
 /**
