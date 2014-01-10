@@ -109,3 +109,5 @@ UpgradeLog*.XML
 
 .idea*
 *.class
+PickHand.iml
+src/main/java/*.orig

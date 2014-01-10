@@ -1,5 +1,3 @@
-package Extracting
-
 import Extracting.ExcelBuilder
 
 /**
@@ -68,7 +66,8 @@ class PickHandPicker {
                 }
             }
 
-            Hand hand = new Hand(id as long, cell(1) as long, startTimeInSec, endTimeInSec, smallBlind, bigBlind, ante, new ArrayList<PlayerInHand>(), new ArrayList<Round>());
+            Hand hand = new Hand(id as long, cell(1) as long, startTimeInSec, endTimeInSec, smallBlind, bigBlind, ante, new ArrayList<PlayerInHand>(), rounds);
+
             hands.put(hand.handId, hand);
         }
     }
@@ -90,6 +89,8 @@ class PickHandPicker {
                 currentCard = "";
             }
         }
+
+        return cards;
     }
 
     static class Game {
