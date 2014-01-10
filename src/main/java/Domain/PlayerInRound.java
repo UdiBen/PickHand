@@ -8,7 +8,7 @@ public class PlayerInRound {
     private StackType stack;
     private List<String> cards;
 
-    public PlayerInRound(long id, int position, Integer stack, List<String> cards) {
+    public PlayerInRound(long id, int position, StackType stack, List<String> cards) {
         this.id = id;
         this.position = position;
         this.stack = stack;
@@ -31,11 +31,11 @@ public class PlayerInRound {
         this.position = position;
     }
 
-    public Integer getStack() {
+    public StackType getStack() {
         return stack;
     }
 
-    public void setStack(Integer stack) {
+    public void setStack(StackType stack) {
         this.stack = stack;
     }
 
