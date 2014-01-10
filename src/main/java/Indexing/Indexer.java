@@ -2,13 +2,14 @@ package Indexing;
 
 import Beans.IMapper;
 import Beans.IndexDto;
+import Beans.Mapper;
 import DataAccess.DataProvider;
 import DataAccess.IDataProvider;
 import Domain.Game;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.bootstrap.ElasticSearch;
 import org.elasticsearch.client.Client;
@@ -16,7 +17,9 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
@@ -37,11 +40,11 @@ public class Indexer {
     private IMapper mapper;
 
     public static void main(String[] args) {
-        Indexer indexer = new Indexer(new DataProvider());
+        Indexer indexer = new Indexer(new DataProvider(), new Mapper());
         indexer.start();
     }
 
-    public Indexer(IDataProvider dataProvider) {
+    public Indexer(IDataProvider dataProvider, IMapper mapper) {
         this.dataProvider = dataProvider;
         this.mapper = mapper;
     }
@@ -55,6 +58,7 @@ public class Indexer {
                 .node();
         Client client = node.client();
 
+        deleteExistingIndex(client);
         createIndex(client);
 
         List<IndexDto> documents = getHands();
@@ -65,6 +69,10 @@ public class Indexer {
 
         client.admin().indices().prepareRefresh().execute().actionGet();
         node.close();
+    }
+
+    private void deleteExistingIndex(Client client) {
+        client.admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).actionGet();
     }
 
     private void index(List<IndexDto> documents, Node node) {
@@ -82,9 +90,9 @@ public class Indexer {
         try {
             return jsonBuilder()
                     .startObject()
-                        .field("id", doc.getHandId())
-                        .field("gameId", doc.getGameId())
-                        .field("videoLink", doc.getVideoLink())
+                    .field("id", doc.getHandId())
+                    .field("gameId", doc.getGameId())
+                    .field("videoLink", doc.getVideoLink())
                     .endObject();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -92,7 +100,6 @@ public class Indexer {
     }
 
     private void createIndex(Client client) {
-        client.delete(new DeleteRequest(INDEX_NAME));
         client.prepareIndex(INDEX_NAME, TYPE).setIndex(INDEX_NAME);
     }
 
