@@ -1,7 +1,6 @@
-package Domain;
+package Beans;
 
-import Domain.PlayerInRound;
-import Domain.Round;
+import Domain.*;
 
 import java.util.List;
 
@@ -12,21 +11,29 @@ import java.util.List;
  * Time: 15:30
  * To change this template use File | Settings | File Templates.
  */
-public class Hand {
+public class IndexDto {
     private long gameId;
     private long handId;
     private int startTimeInSec;
     private int endTimeInSec;
     private List<PlayerInRound> players;
     private List<Round> round;
+    private GameFormat gameFormat;
+    private String videoLink;
+    private String title;
+    private boolean live;
 
-    public Hand(long gameId, long handId, int startTimeInSec, int endTimeInSec, List<PlayerInRound> players, List<Round> round) {
-        this.gameId = gameId;
-        this.handId = handId;
-        this.startTimeInSec = startTimeInSec;
-        this.endTimeInSec = endTimeInSec;
-        this.players = players;
-        this.round = round;
+    public IndexDto(Game game, Hand hand) {
+        this.gameId = game.getId();
+        this.gameFormat = game.getFormat();
+        this.videoLink = game.getVideoLink();
+        this.title = game.getTitle();
+        this.live = game.isLive();
+        this.handId = hand.getId();
+        this.startTimeInSec = hand.getStartTimeInSec();
+        this.endTimeInSec = hand.getEndTimeInSec();
+        this.players = hand.getPlayers();
+        this.round = hand.getRound();
     }
 
     public long getGameId() {
@@ -37,7 +44,7 @@ public class Hand {
         this.gameId = gameId;
     }
 
-    public long getId() {
+    public long getHandId() {
         return handId;
     }
 
@@ -75,6 +82,38 @@ public class Hand {
 
     public void setRound(List<Round> round) {
         this.round = round;
+    }
+
+    public GameFormat getGameFormat() {
+        return gameFormat;
+    }
+
+    public void setGameFormat(GameFormat gameFormat) {
+        this.gameFormat = gameFormat;
+    }
+
+    public String getVideoLink() {
+        return videoLink;
+    }
+
+    public void setVideoLink(String videoLink) {
+        this.videoLink = videoLink;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public boolean isLive() {
+        return live;
+    }
+
+    public void setLive(boolean live) {
+        this.live = live;
     }
 }
 

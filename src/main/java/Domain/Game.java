@@ -1,18 +1,22 @@
 package Domain;
 
+import java.util.List;
+
 public class Game {
     private long id;
+    private List<Hand> hands;
     private String videoLink;
     private String title;
     private GameFormat format;
     private boolean isLive;
 
-    public Game(long id, String videoLink, String title, GameFormat format, boolean isLive) {
+    public Game(long id, List<Hand> hands, String videoLink, String title, GameFormat format, boolean live) {
         this.id = id;
+        this.hands = hands;
         this.videoLink = videoLink;
         this.title = title;
         this.format = format;
-        this.isLive = isLive;
+        isLive = live;
     }
 
     public long getId() {
@@ -21,6 +25,14 @@ public class Game {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public List<Hand> getHands() {
+        return hands;
+    }
+
+    public void setHands(List<Hand> hands) {
+        this.hands = hands;
     }
 
     public String getVideoLink() {
