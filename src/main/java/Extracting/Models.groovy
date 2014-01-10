@@ -7,7 +7,7 @@ package Extracting
  * To change this template use File | Settings | File Templates.
  */
 
-static class Game {
+class Game {
     public Game() {
     }
 
