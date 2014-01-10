@@ -1,3 +1,13 @@
+import Domain.ActionType
+import Domain.Game
+import Domain.GameFormat
+import Domain.Hand
+import Domain.Player
+import Domain.PlayerInHand
+import Domain.Round
+import Domain.RoundAction
+import Domain.RoundType
+import Domain.StackType
 import Extracting.ExcelBuilder
 
 /**
@@ -11,6 +21,7 @@ class PickHandPicker {
 
         ExtractGAMES()
         ExtractHANDS()
+        ExtractPLAYERS()
 
         games.values().each {
             game ->
@@ -43,26 +54,26 @@ class PickHandPicker {
 
             int startTimeInSec = (cell(2) as int) * 60 + (cell(3) as int);
             int endTimeInSec = (cell(4) as int) * 60 + (cell(5) as int);
-            List<Round> rounds = new ArrayList<>();
+            Map<RoundType, Round> rounds = new HashMap<>();
 
             int smallBlind = cell(9);
             int bigBlind = cell(10);
             int ante = cell(11);
 
-            rounds.add(new Round(RoundType.PRE_FLOP, new ArrayList<String>(), 0, new ArrayList<RoundAction>()));
+            rounds.put(RoundType.PRE_FLOP, new Round(RoundType.PRE_FLOP, new ArrayList<String>(), 0, new ArrayList<RoundAction>()));
 
 
             def flop = cell(6)
             if (flop != null && !flop.equals("")) {
-                rounds.add(new Round(RoundType.FLOP, getCardsFromString(flop), 0, new ArrayList<RoundAction>()))
+                rounds.put(RoundType.FLOP, new Round(RoundType.FLOP, getCardsFromString(flop), 0, new ArrayList<RoundAction>()))
 
                 def turn = cell(7)
                 if (turn != null && !turn.equals("")) {
-                    rounds.add(new Round(RoundType.TURN, getCardsFromString(turn), 0, new ArrayList<RoundAction>()));
+                    rounds.put(RoundType.TURN, new Round(RoundType.TURN, getCardsFromString(turn), 0, new ArrayList<RoundAction>()));
 
                     def river = cell(8)
                     if (river != null && !river.equals(""))
-                        rounds.add(new Round(RoundType.RIVER, getCardsFromString(river), 0, new ArrayList<RoundAction>()))
+                        rounds.put(RoundType.RIVER, new Round(RoundType.RIVER, getCardsFromString(river), 0, new ArrayList<RoundAction>()))
                 }
             }
 
@@ -70,6 +81,90 @@ class PickHandPicker {
 
             hands.put(hand.handId, hand);
         }
+    }
+
+    private static void ExtractPLAYERS() {
+        Map<String, Player> playersByName = new HashMap<>()
+        long playerIdIndex = 1;
+        new ExcelBuilder("C:\\Amit\\POKER_EPISODES_PLAYERS.xls").eachLine {
+            def handId = cell(0)
+            if (handId == null || handId.equals(""))
+                return;
+
+            Hand hand = hands.get(handId as long);
+            if (hand == null) {
+                println("Dind not find hand with Id: ${handId}")
+                return;
+            }
+
+            String playerName = cell(1)
+            Player player = playerName.get(playerName)
+
+            if (player == null) {
+                player = new Player(playerIdIndex, playerName)
+                playerIdIndex++
+                playersByName.put(playerName, player)
+            }
+
+            String stackType = cell(2)
+            StackType stack = StackType.valueOf(stackType)
+
+            int position = cell(3)
+            List<String> cards = getCardsFromString(cell(4))
+
+            PlayerInHand playerInHand = new PlayerInHand(player.getId(), position, stackType, cards)
+
+            hand.players.add(playerInHand)
+
+            String preFlopActions = cell(5)
+            extractRoundActions(preFlopActions, RoundType.PRE_FLOP, hand, player)
+
+            String flopActions = cell(6)
+            extractRoundActions(flopActions, RoundType.FLOP, hand, player)
+
+            String turnActions = cell(7)
+            extractRoundActions(turnActions, RoundType.TURN, hand, player)
+
+            String riverActions = cell(8)
+            extractRoundActions(riverActions, RoundType.RIVER, hand, player)
+
+        }
+    }
+
+    static def extractRoundActions(String roundActionsStr, RoundType roundType, Hand hand, Player player)
+    {
+        if (roundActionsStr == null || roundActionsStr.equals("")) {
+            List<RoundAction> roundActions = extractRoundActionsFromUser(roundActionsStr, player.getId())
+            List<RoundAction> actions = hand.getRounds().get(RoundType.PRE_FLOP).getRoundActions();
+            if (actions == null) {
+                actions = new ArrayList<>();
+            }
+
+            actions.addAll(roundActionsStr);
+        }
+    }
+
+    static def extractRoundActionsFromUser(String actions, long playerId) {
+        List<RoundAction> actionList = new ArrayList<>()
+
+        String[] playerActions = actions.trim().split(",");
+
+        if (playerActions == null || playerActions.size() == 0) {
+            return actionList;
+        }
+
+        playerActions.each {
+            action ->
+                try {
+                    int bet = Integer.valueOf(action);
+                    actionList.add(new RoundAction(playerId, ActionType.UNDEFINED, bet))
+                } catch (Exception e) {
+                    println("Could not parse bet of player with Id ${playerId}, actions were: ${actions}")
+                    return actionList;
+                }
+                return actionList;
+        }
+
     }
 
     static List<String> getCardsFromString(String cardsString) {
@@ -91,101 +186,5 @@ class PickHandPicker {
         }
 
         return cards;
-    }
-
-    static class Game {
-        public Game() {
-        }
-
-        public Game(long id, String videoLink, String title, GameFormat format, boolean isLive) {
-            this.id = id
-            this.videoLink = videoLink
-            this.title = title
-            this.format = format
-            this.isLive = isLive
-        }
-
-        long id;
-        String videoLink;
-        String title;
-        GameFormat format;
-        boolean isLive;
-    }
-
-    enum GameFormat
-    {
-        CASH, TOURNAMENT
-
-        public static GameFormat fromString(String str) {
-            if (str.toLowerCase().equals("tournament"))
-                return TOURNAMENT;
-            else
-                return CASH;
-        }
-    }
-
-    static class Hand {
-        Hand(long handId, long gameId, int startTimeInSec, int endTimeInSec, int smallBlind, int bigBlind, int ante, List<PlayerInHand> players, List<Round> round) {
-            this.handId = handId
-            this.gameId = gameId
-            this.startTimeInSec = startTimeInSec
-            this.endTimeInSec = endTimeInSec
-            this.smallBlind = smallBlind
-            this.bigBlind = bigBlind
-            this.ante = ante
-            this.players = players
-            this.round = round
-        }
-        long handId
-        long gameId;
-        int startTimeInSec;
-        int endTimeInSec;
-        int smallBlind;
-        int bigBlind;
-        int ante;
-        List<PlayerInHand> players;
-        List<Round> round;
-    }
-
-    class Player {
-        long id;
-        String Name;
-    }
-
-    class PlayerInHand {
-        long id;
-        int position;
-        Integer stack;
-        List<String> cards;
-    }
-
-    static class Round {
-        RoundType type;
-        List<String> cards;
-        int pot;
-        List<RoundAction> round;
-
-        Round(RoundType type, List<String> cards, int pot, List<RoundAction> round) {
-            this.type = type
-            this.cards = cards
-            this.pot = pot
-            this.round = round
-        }
-    }
-
-    enum RoundType
-    {
-        PRE_FLOP, FLOP, TURN, RIVER;
-    }
-
-    class RoundAction {
-        long playerId;
-        ActionType actionType;
-        int betAmount;
-    }
-
-    enum ActionType
-    {
-        FOLD, CHECK, RAISE;
     }
 }

@@ -2,13 +2,13 @@ package Domain;
 
 import java.util.List;
 
-public class PlayerInRound {
+public class PlayerInHand {
     private long id;
     private int position;
     private StackType stack;
     private List<String> cards;
 
-    public PlayerInRound(long id, int position, StackType stack, List<String> cards) {
+    public PlayerInHand(long id, int position, StackType stack, List<String> cards) {
         this.id = id;
         this.position = position;
         this.stack = stack;

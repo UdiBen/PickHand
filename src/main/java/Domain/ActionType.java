@@ -1,5 +1,5 @@
 package Domain;
 
 public enum ActionType {
-    FOLD, CHECK, RAISE
+    FOLD, CHECK, RAISE, UNDEFINED
 }

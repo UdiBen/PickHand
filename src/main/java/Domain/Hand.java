@@ -1,9 +1,7 @@
 package Domain;
 
-import Domain.PlayerInRound;
-import Domain.Round;
-
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,16 +15,16 @@ public class Hand {
     private long handId;
     private int startTimeInSec;
     private int endTimeInSec;
-    private List<PlayerInRound> players;
-    private List<Round> round;
+    private List<PlayerInHand> players;
+    private Map<RoundType, Round> rounds;
 
-    public Hand(long gameId, long handId, int startTimeInSec, int endTimeInSec, List<PlayerInRound> players, List<Round> round) {
+    public Hand(long gameId, long handId, int startTimeInSec, int endTimeInSec, List<PlayerInHand> players, Map<RoundType, Round> round) {
         this.gameId = gameId;
         this.handId = handId;
         this.startTimeInSec = startTimeInSec;
         this.endTimeInSec = endTimeInSec;
         this.players = players;
-        this.round = round;
+        this.rounds = round;
     }
 
     public long getGameId() {
@@ -61,20 +59,20 @@ public class Hand {
         this.endTimeInSec = endTimeInSec;
     }
 
-    public List<PlayerInRound> getPlayers() {
+    public List<PlayerInHand> getPlayers() {
         return players;
     }
 
-    public void setPlayers(List<PlayerInRound> players) {
+    public void setPlayers(List<PlayerInHand> players) {
         this.players = players;
     }
 
-    public List<Round> getRound() {
-        return round;
+    public Map<RoundType, Round> getRounds() {
+        return rounds;
     }
 
-    public void setRound(List<Round> round) {
-        this.round = round;
+    public void setRounds(Map<RoundType, Round> rounds) {
+        this.rounds = rounds;
     }
 }
 

@@ -6,13 +6,13 @@ public class Round {
     private RoundType type;
     private List<String> cards;
     private int pot;
-    private List<RoundAction> round;
+    private List<RoundAction> roundActions;
 
     public Round(RoundType type, List<String> cards, int pot, List<RoundAction> round) {
         this.type = type;
         this.cards = cards;
         this.pot = pot;
-        this.round = round;
+        this.roundActions = round;
     }
 
     public RoundType getType() {
@@ -39,11 +39,11 @@ public class Round {
         this.pot = pot;
     }
 
-    public List<RoundAction> getRound() {
-        return round;
+    public List<RoundAction> getRoundActions() {
+        return roundActions;
     }
 
-    public void setRound(List<RoundAction> round) {
-        this.round = round;
+    public void setRoundActions(List<RoundAction> roundActions) {
+        this.roundActions = roundActions;
     }
 }
