@@ -8,5 +8,5 @@ package Domain;
  * To change this template use File | Settings | File Templates.
  */
 public enum StackType {
-    SHORT, MEDIUM, DEEP
+    SHORT, MEDIUM, DEEP, UNDEFINED
 }

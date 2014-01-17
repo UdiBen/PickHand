@@ -11,20 +11,29 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class Hand {
-    private long gameId;
     private long handId;
+    private long gameId;
     private int startTimeInSec;
     private int endTimeInSec;
+    private int smallBlind;
+    private int bigBlind;
+    private int ante;
     private List<PlayerInHand> players;
     private Map<RoundType, Round> rounds;
 
-    public Hand(long gameId, long handId, int startTimeInSec, int endTimeInSec, List<PlayerInHand> players, Map<RoundType, Round> round) {
-        this.gameId = gameId;
+    public Hand() {
+    }
+
+    public Hand(long handId, long gameId, int startTimeInSec, int endTimeInSec, int smallBlind, int bigBlind, int ante, List<PlayerInHand> players, Map<RoundType, Round> rounds) {
         this.handId = handId;
+        this.gameId = gameId;
         this.startTimeInSec = startTimeInSec;
         this.endTimeInSec = endTimeInSec;
+        this.smallBlind = smallBlind;
+        this.bigBlind = bigBlind;
+        this.ante = ante;
         this.players = players;
-        this.rounds = round;
+        this.rounds = rounds;
     }
 
     public long getGameId() {
@@ -73,6 +82,34 @@ public class Hand {
 
     public void setRounds(Map<RoundType, Round> rounds) {
         this.rounds = rounds;
+    }
+
+    public long getHandId() {
+        return handId;
+    }
+
+    public int getSmallBlind() {
+        return smallBlind;
+    }
+
+    public void setSmallBlind(int smallBlind) {
+        this.smallBlind = smallBlind;
+    }
+
+    public int getBigBlind() {
+        return bigBlind;
+    }
+
+    public void setBigBlind(int bigBlind) {
+        this.bigBlind = bigBlind;
+    }
+
+    public int getAnte() {
+        return ante;
+    }
+
+    public void setAnte(int ante) {
+        this.ante = ante;
     }
 }
 

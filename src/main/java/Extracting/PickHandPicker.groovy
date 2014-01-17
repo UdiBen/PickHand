@@ -16,6 +16,8 @@ import Extracting.ExcelBuilder
 class PickHandPicker {
     static Map<Long, Game> games = new HashMap<>();
     static Map<Long, Hand> hands = new HashMap<>();
+    static Map<String, Player> playersByName = new HashMap<>()
+    static long playerIdIndex = 1;
 
     public static void main(String[] args) {
 
@@ -33,6 +35,87 @@ class PickHandPicker {
                 println("${hand.handId}, ${hand.gameId}, ${hand.endTimeInSec}");
         }
 
+        updateHandsBettingTypeData()
+
+        println("FINISHED!!!")
+    }
+
+    static def updateHandsBettingTypeData() {
+        hands.values().each {
+            hand ->
+                Map<Integer, Long> positionToPlayerId = new HashMap<>()
+                hand.getPlayers().each {
+                    player ->
+                        positionToPlayerId.put(player.getPosition(), player.getId());
+                }
+
+                hand.getRounds().values().each {
+                    round ->
+                        Map<Long, List<RoundAction>> playerIdToActions = new HashMap<>()
+                        round.getRoundActions().each {
+                            action ->
+                                def playerId = action.getPlayerId()
+                                if (!playerIdToActions.containsKey(playerId)) {
+                                    playerIdToActions.put(playerId, new ArrayList<RoundAction>());
+                                }
+                                playerIdToActions.get(playerId).add(action)
+                        }
+
+
+                        def numberOfPlayers = positionToPlayerId.size()
+                        def continueScan = true
+                        def currentPosition = playerIdToActions().size() > 3 ? 3 : 0;
+                        List<RoundAction> orderedRoundAction = new ArrayList<>()
+                        int[] playerActionIndex = new int[numberOfPlayers];
+
+                        int maxAmount = 0;
+
+                        if (round.getType() == RoundType.PRE_FLOP) {
+                            maxAmount = hand.bigBlind;
+                        }
+
+
+
+                        while (continueScan) {
+                            continueScan = false;
+                            def playerId = positionToPlayerId.get(currentPosition);
+
+                            def actions = playerIdToActions.get(playerId)
+
+
+                            // FIX BUG HERE
+                            if (actions == null || actions.size() > 0) {
+                                actions = new ArrayList<RoundAction>();
+                            }
+
+                            if (playerActionIndex[currentPosition] < actions.size()) {
+                                def action = actions.get(playerActionIndex[currentPosition]);
+
+                                def amount = action.betAmount
+                                if (amount == 0) {
+                                    if (maxAmount > 0)
+                                        action.actionType = ActionType.FOLD;
+                                    else
+                                        action.actionType = ActionType.CHECK;
+                                } else if (amount == maxAmount) {
+                                    action.actionType = ActionType.CALL;
+                                } else if (amount > maxAmount) {
+                                    maxAmount = amount;
+                                    action.actionType = ActionType.RAISE;
+                                }
+
+                                orderedRoundAction.add(action);
+                                playerActionIndex[currentPosition]++;
+                                continueScan = true;
+                            }
+
+                            currentPosition++;
+                            if (currentPosition == numberOfPlayers)
+                                currentPosition = 0;
+                        }
+                        round.setRoundActions(orderedRoundAction);
+                }
+        }
     }
 
     private static void ExtractGAMES() {
@@ -41,7 +124,7 @@ class PickHandPicker {
             if (id == null || id.equals(""))
                 return;
 
-            Game game = new Game(id as long, cell(1), cell(2), GameFormat.fromString(cell(3)), true);
+            Game game = new Game(id as long, new ArrayList<Hand>(), cell(1), cell(2), GameFormat.fromString(cell(3)), true);
             games.put(game.id, game);
         }
     }
@@ -77,28 +160,33 @@ class PickHandPicker {
                 }
             }
 
-            Hand hand = new Hand(id as long, cell(1) as long, startTimeInSec, endTimeInSec, smallBlind, bigBlind, ante, new ArrayList<PlayerInHand>(), rounds);
+
+            long gameId = cell(1) as long;
+            Hand hand = new Hand(id as long, gameId, startTimeInSec, endTimeInSec, smallBlind, bigBlind, ante, new ArrayList<PlayerInHand>(), rounds);
 
             hands.put(hand.handId, hand);
+            Game game = games.get(gameId);
+
+            if (game != null)
+                game.getHands().add(hand);
+
         }
     }
 
     private static void ExtractPLAYERS() {
-        Map<String, Player> playersByName = new HashMap<>()
-        long playerIdIndex = 1;
         new ExcelBuilder("C:\\Amit\\POKER_EPISODES_PLAYERS.xls").eachLine {
             def handId = cell(0)
             if (handId == null || handId.equals(""))
                 return;
 
-            Hand hand = hands.get(handId as long);
+            Hand hand = hands.get(handId as Long);
             if (hand == null) {
                 println("Dind not find hand with Id: ${handId}")
                 return;
             }
 
             String playerName = cell(1)
-            Player player = playerName.get(playerName)
+            Player player = playersByName.get(playerName)
 
             if (player == null) {
                 player = new Player(playerIdIndex, playerName)
@@ -106,13 +194,16 @@ class PickHandPicker {
                 playersByName.put(playerName, player)
             }
 
+            StackType stack = StackType.UNDEFINED;
+
             String stackType = cell(2)
-            StackType stack = StackType.valueOf(stackType)
+            if (stackType != null && !stackType.trim().equals(""))
+                stack = StackType.valueOf(stackType.toUpperCase())
 
             int position = cell(3)
             List<String> cards = getCardsFromString(cell(4))
 
-            PlayerInHand playerInHand = new PlayerInHand(player.getId(), position, stackType, cards)
+            PlayerInHand playerInHand = new PlayerInHand(player.getId(), position, stack, cards)
 
             hand.players.add(playerInHand)
 
@@ -131,16 +222,20 @@ class PickHandPicker {
         }
     }
 
-    static def extractRoundActions(String roundActionsStr, RoundType roundType, Hand hand, Player player)
-    {
-        if (roundActionsStr == null || roundActionsStr.equals("")) {
-            List<RoundAction> roundActions = extractRoundActionsFromUser(roundActionsStr, player.getId())
-            List<RoundAction> actions = hand.getRounds().get(RoundType.PRE_FLOP).getRoundActions();
-            if (actions == null) {
-                actions = new ArrayList<>();
-            }
+    static def extractRoundActions(String roundActionsStr, RoundType roundType, Hand hand, Player player) {
+        def round = hand.getRounds().get(roundType)
 
-            actions.addAll(roundActionsStr);
+        if (round == null)
+            return;
+
+        List<RoundAction> actions = round.getRoundActions();
+        if (actions == null) {
+            actions = new ArrayList<>();
+        }
+
+        if (roundActionsStr != null && !roundActionsStr.equals("")) {
+            List<RoundAction> roundActions = extractRoundActionsFromUser(roundActionsStr, player.getId())
+            actions.addAll(roundActions);
         }
     }
 
@@ -156,15 +251,15 @@ class PickHandPicker {
         playerActions.each {
             action ->
                 try {
-                    int bet = Integer.valueOf(action);
+                    int bet = (int) (action as double);
                     actionList.add(new RoundAction(playerId, ActionType.UNDEFINED, bet))
                 } catch (Exception e) {
                     println("Could not parse bet of player with Id ${playerId}, actions were: ${actions}")
                     return actionList;
                 }
-                return actionList;
         }
 
+        return actionList;
     }
 
     static List<String> getCardsFromString(String cardsString) {
@@ -187,4 +282,5 @@ class PickHandPicker {
 
         return cards;
     }
+
 }

@@ -18,7 +18,7 @@ public class DataProvider implements IDataProvider{
     }
 
     private List<Hand> getHands() {
-        return Arrays.asList(new Hand(1, 1, 10, 120, new ArrayList<PlayerInHand>(), new HashMap<RoundType, Round>()
+        return Arrays.asList(new Hand(1, 1, 10, 120, 100, 200, 50, new ArrayList<PlayerInHand>(), new HashMap<RoundType, Round>()
         ));
     }
 }
