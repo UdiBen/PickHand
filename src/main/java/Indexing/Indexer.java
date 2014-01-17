@@ -6,6 +6,7 @@ import Beans.Mapper;
 import DataAccess.DataProvider;
 import DataAccess.IDataProvider;
 import Domain.Game;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -13,15 +14,13 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.bootstrap.ElasticSearch;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
+import com.fasterxml.jackson.databind.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
@@ -56,48 +55,54 @@ public class Indexer {
                 .clusterName("pickhand_cluster")
                 .client(true)
                 .node();
-        Client client = node.client();
+        try {
+            Client client = node.client();
 
-        deleteExistingIndex(client);
-        createIndex(client);
+            deleteExistingIndex(client);
+            createIndex(client);
 
-        List<IndexDto> documents = getHands();
+            List<IndexDto> documents = getHands();
 
-        index(documents, node);
+            index(documents, node);
 
-        // on shutdown
+            // on shutdown
 
-        client.admin().indices().prepareRefresh().execute().actionGet();
-        node.close();
+            client.admin().indices().prepareRefresh().execute().actionGet();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            node.close();
+        }
     }
 
     private void deleteExistingIndex(Client client) {
         client.admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).actionGet();
     }
 
-    private void index(List<IndexDto> documents, Node node) {
+    private void index(List<IndexDto> documents, Node node) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
         BulkRequestBuilder bulk = node.client().prepareBulk();
 
         for (IndexDto doc : documents) {
             bulk.add(new IndexRequest(INDEX_NAME, TYPE, String.valueOf(doc.getHandId()))
-                    .source(Build(doc)));
+                    .source(mapper.writeValueAsString(doc)));
         }
 
         bulk.execute().actionGet();
     }
 
-    private XContentBuilder Build(IndexDto doc) {
-        try {
-            return jsonBuilder()
-                    .startObject()
-                    .field("id", doc.getHandId())
-                    .field("gameId", doc.getGameId())
-                    .field("videoLink", doc.getVideoLink())
-                    .endObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    private XContentBuilder Build(IndexDto doc) {
+//        try {
+//            return jsonBuilder()
+//                    .startObject()
+//                    .field("id", doc.getHandId())
+//                    .field("gameId", doc.getGameId())
+//                    .field("videoLink", doc.getVideoLink())
+//                    .endObject();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private void createIndex(Client client) {
         client.prepareIndex(INDEX_NAME, TYPE).setIndex(INDEX_NAME);
