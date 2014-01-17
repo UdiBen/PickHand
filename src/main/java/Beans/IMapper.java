@@ -12,5 +12,5 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public interface IMapper {
-    public List<IndexDto> toIndexDtos(Game game);
+    public List<HandIndexDto> toIndexDtos(Game game);
 }

@@ -4,6 +4,7 @@ import Domain.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class DataProvider implements IDataProvider{
@@ -17,7 +18,7 @@ public class DataProvider implements IDataProvider{
     }
 
     private List<Hand> getHands() {
-        return Arrays.asList(new Hand(1, 1, 10, 120, new ArrayList<PlayerInRound>(), new ArrayList<Round>()
+        return Arrays.asList(new Hand(1, 1, 10, 120, new ArrayList<PlayerInHand>(), new HashMap<RoundType, Round>()
         ));
     }
 }

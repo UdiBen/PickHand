@@ -14,10 +14,10 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class Mapper implements IMapper {
-    public List<IndexDto> toIndexDtos(Game game) {
-        List<IndexDto> dtos = new ArrayList<IndexDto>();
+    public List<HandIndexDto> toIndexDtos(Game game) {
+        List<HandIndexDto> dtos = new ArrayList<HandIndexDto>();
         for(Hand hand : game.getHands()){
-            dtos.add(new IndexDto(game, hand));
+            dtos.add(new HandIndexDto(game, hand));
         }
         return dtos;
     }

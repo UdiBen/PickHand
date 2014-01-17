@@ -1,7 +1,7 @@
 package Indexing;
 
+import Beans.HandIndexDto;
 import Beans.IMapper;
-import Beans.IndexDto;
 import Beans.Mapper;
 import DataAccess.DataProvider;
 import DataAccess.IDataProvider;
@@ -61,7 +61,7 @@ public class Indexer {
             deleteExistingIndex(client);
             createIndex(client);
 
-            List<IndexDto> documents = getHands();
+            List<HandIndexDto> documents = getHands();
 
             index(documents, node);
 
@@ -79,11 +79,11 @@ public class Indexer {
         client.admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).actionGet();
     }
 
-    private void index(List<IndexDto> documents, Node node) throws JsonProcessingException {
+    private void index(List<HandIndexDto> documents, Node node) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         BulkRequestBuilder bulk = node.client().prepareBulk();
 
-        for (IndexDto doc : documents) {
+        for (HandIndexDto doc : documents) {
             bulk.add(new IndexRequest(INDEX_NAME, TYPE, String.valueOf(doc.getHandId()))
                     .source(mapper.writeValueAsString(doc)));
         }
@@ -108,9 +108,9 @@ public class Indexer {
         client.prepareIndex(INDEX_NAME, TYPE).setIndex(INDEX_NAME);
     }
 
-    public List<IndexDto> getHands() {
-        return flatten(Collections2.transform(dataProvider.GetGames(), new Function<Game, List<IndexDto>>() {
-            public List<IndexDto> apply(Game game) {
+    public List<HandIndexDto> getHands() {
+        return flatten(Collections2.transform(dataProvider.GetGames(), new Function<Game, List<HandIndexDto>>() {
+            public List<HandIndexDto> apply(Game game) {
                 return mapper.toIndexDtos(game);
             }
         }));

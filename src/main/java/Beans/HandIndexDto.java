@@ -3,6 +3,7 @@ package Beans;
 import Domain.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,19 +12,19 @@ import java.util.List;
  * Time: 15:30
  * To change this template use File | Settings | File Templates.
  */
-public class IndexDto {
+public class HandIndexDto {
     private long gameId;
     private long handId;
     private int startTimeInSec;
     private int endTimeInSec;
-    private List<PlayerInRound> players;
-    private List<Round> round;
+    private List<PlayerInHand> players;
+    private Map<RoundType, Round> round;
     private GameFormat gameFormat;
     private String videoLink;
     private String title;
     private boolean live;
 
-    public IndexDto(Game game, Hand hand) {
+    public HandIndexDto(Game game, Hand hand) {
         this.gameId = game.getId();
         this.gameFormat = game.getFormat();
         this.videoLink = game.getVideoLink();
@@ -33,7 +34,7 @@ public class IndexDto {
         this.startTimeInSec = hand.getStartTimeInSec();
         this.endTimeInSec = hand.getEndTimeInSec();
         this.players = hand.getPlayers();
-        this.round = hand.getRound();
+        this.round = hand.getRounds();
     }
 
     public long getGameId() {
@@ -68,19 +69,19 @@ public class IndexDto {
         this.endTimeInSec = endTimeInSec;
     }
 
-    public List<PlayerInRound> getPlayers() {
+    public List<PlayerInHand> getPlayers() {
         return players;
     }
 
-    public void setPlayers(List<PlayerInRound> players) {
+    public void setPlayers(List<PlayerInHand> players) {
         this.players = players;
     }
 
-    public List<Round> getRound() {
+    public Map<RoundType, Round> getRound() {
         return round;
     }
 
-    public void setRound(List<Round> round) {
+    public void setRound(Map<RoundType, Round> round) {
         this.round = round;
     }
 
