@@ -2,6 +2,7 @@ package DataAccess;
 
 import Domain.Game;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -12,6 +13,6 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public interface IDataProvider {
-    public List<Game> GetGames();
+    public Collection<Game> GetGames();
 }
 

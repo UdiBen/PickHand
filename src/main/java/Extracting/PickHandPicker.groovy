@@ -1,3 +1,6 @@
+import Beans.Mapper
+import DataAccess.DataProvider
+import DataAccess.IDataProvider
 import Domain.ActionType
 import Domain.Game
 import Domain.GameFormat
@@ -9,6 +12,7 @@ import Domain.RoundAction
 import Domain.RoundType
 import Domain.StackType
 import Extracting.ExcelBuilder
+import Indexing.Indexer
 
 /**
  * Created by Noga on 28/12/13.
@@ -35,8 +39,10 @@ class PickHandPicker {
                 println("${hand.handId}, ${hand.gameId}, ${hand.endTimeInSec}");
         }
 
-        updateHandsBettingTypeData()
+//        updateHandsBettingTypeData()
 
+        def indexer = new Indexer(new DataProvider(games, hands), new Mapper());
+        new Thread(indexer).start();
         println("FINISHED!!!")
     }
 
@@ -119,7 +125,7 @@ class PickHandPicker {
     }
 
     private static void ExtractGAMES() {
-        new ExcelBuilder("C:\\Amit\\POKER_EPISODES_GAMES.xls").eachLine {
+        new ExcelBuilder("data\\POKER_EPISODES_GAMES.xls").eachLine {
             def id = cell(0)
             if (id == null || id.equals(""))
                 return;
@@ -130,7 +136,7 @@ class PickHandPicker {
     }
 
     private static void ExtractHANDS() {
-        new ExcelBuilder("C:\\Amit\\POKER_EPISODES_HANDS.xls").eachLine {
+        new ExcelBuilder("data\\POKER_EPISODES_HANDS.xls").eachLine {
             def id = cell(0)
             if (id == null || id.equals(""))
                 return;
@@ -174,7 +180,7 @@ class PickHandPicker {
     }
 
     private static void ExtractPLAYERS() {
-        new ExcelBuilder("C:\\Amit\\POKER_EPISODES_PLAYERS.xls").eachLine {
+        new ExcelBuilder("data\\POKER_EPISODES_PLAYERS.xls").eachLine {
             def handId = cell(0)
             if (handId == null || handId.equals(""))
                 return;
