@@ -1,18 +1,8 @@
 import Beans.Mapper
 import DataAccess.DataProvider
-import DataAccess.IDataProvider
-import Domain.ActionType
-import Domain.Game
-import Domain.GameFormat
-import Domain.Hand
-import Domain.Player
-import Domain.PlayerInHand
-import Domain.Round
-import Domain.RoundAction
-import Domain.RoundType
-import Domain.StackType
 import Extracting.ExcelBuilder
 import Indexing.Indexer
+import Domain.*
 
 /**
  * Created by Noga on 28/12/13.
@@ -39,7 +29,7 @@ class PickHandPicker {
             println("${hand.handId}, ${hand.gameId}, ${hand.endTimeInSec}");
         }
 
-//        updateHandsBettingTypeData()
+        updateHandsBettingTypeData()
 
         def indexer = new Indexer(new DataProvider(games, hands), new Mapper());
         new Thread(indexer).start();
