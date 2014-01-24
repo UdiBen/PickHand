@@ -31,12 +31,12 @@ class PickHandPicker {
 
         games.values().each {
             game ->
-                println("${game.id}, ${game.title}");
+            println("${game.id}, ${game.title}");
         }
 
         hands.values().each {
             hand ->
-                println("${hand.handId}, ${hand.gameId}, ${hand.endTimeInSec}");
+            println("${hand.handId}, ${hand.gameId}, ${hand.endTimeInSec}");
         }
 
 //        updateHandsBettingTypeData()
@@ -49,80 +49,91 @@ class PickHandPicker {
     static def updateHandsBettingTypeData() {
         hands.values().each {
             hand ->
-                Map<Integer, Long> positionToPlayerId = new HashMap<>()
-                hand.getPlayers().each {
-                    player ->
-                        positionToPlayerId.put(player.getPosition(), player.getId());
+            Map<Integer, Long> positionToPlayerId = new HashMap<>()
+            hand.getPlayers().each {
+                player ->
+                positionToPlayerId.put(player.getPosition(), player.getId());
+            }
+
+            hand.getRounds().values().each {
+                round ->
+                Map<Long, List<RoundAction>> playerIdToActions = new HashMap<>()
+                Map<Long, Integer> playerIdActionIndex = new HashMap<>()
+                round.getRoundActions().each {
+                    action ->
+                    def playerId = action.getPlayerId()
+                    if (!playerIdToActions.containsKey(playerId)) {
+                        playerIdToActions.put(playerId, new ArrayList<RoundAction>());
+                    }
+                    playerIdToActions.get(playerId).add(action)
+                    playerIdActionIndex.put(playerId, 0);
                 }
 
-                hand.getRounds().values().each {
-                    round ->
-                        Map<Long, List<RoundAction>> playerIdToActions = new HashMap<>()
-                        round.getRoundActions().each {
-                            action ->
-                                def playerId = action.getPlayerId()
-                                if (!playerIdToActions.containsKey(playerId)) {
-                                    playerIdToActions.put(playerId, new ArrayList<RoundAction>());
-                                }
-                                playerIdToActions.get(playerId).add(action)
+
+                def numberOfPlayersInRound = playerIdToActions.size()
+                def currentPosition = 1;
+                int maxAmount = 0;
+
+                if (round.getType() == RoundType.PRE_FLOP) {
+                    maxAmount = hand.bigBlind
+                    if (numberOfPlayersInRound < 3) {
+                        if (numberOfPlayersInRound == 3) {
+                            currentPosition = 0;
+                        } else {
+                            currentPosition = 1;
                         }
-
-
-                        def numberOfPlayers = positionToPlayerId.size()
-                        def continueScan = true
-                        def currentPosition = playerIdToActions().size() > 3 ? 3 : 0;
-                        List<RoundAction> orderedRoundAction = new ArrayList<>()
-                        int[] playerActionIndex = new int[numberOfPlayers];
-
-                        int maxAmount = 0;
-
-                        if (round.getType() == RoundType.PRE_FLOP) {
-                            maxAmount = hand.bigBlind;
-                        }
-
-
-
-                        while (continueScan) {
-                            continueScan = false;
-                            def playerId = positionToPlayerId.get(currentPosition);
-
-                            def actions = playerIdToActions.get(playerId)
-
-
-                            // FIX BUG HERE
-                            if (actions == null || actions.size() > 0) {
-                                actions = new ArrayList<RoundAction>();
-                            }
-
-                            if (playerActionIndex[currentPosition] < actions.size()) {
-                                def action = actions.get(playerActionIndex[currentPosition]);
-
-                                def amount = action.betAmount
-                                if (amount == 0) {
-                                    if (maxAmount > 0)
-                                        action.actionType = ActionType.FOLD;
-                                    else
-                                        action.actionType = ActionType.CHECK;
-                                } else if (amount == maxAmount) {
-                                    action.actionType = ActionType.CALL;
-                                } else if (amount > maxAmount) {
-                                    maxAmount = amount;
-                                    action.actionType = ActionType.RAISE;
-                                }
-
-                                orderedRoundAction.add(action);
-                                playerActionIndex[currentPosition]++;
-                                continueScan = true;
-                            }
-
-                            currentPosition++;
-                            if (currentPosition == numberOfPlayers)
-                                currentPosition = 0;
-                        }
-                        round.setRoundActions(orderedRoundAction);
+                    } else {
+                        currentPosition = 3;
+                    }
                 }
+                List<RoundAction> orderedRoundAction = new ArrayList<RoundAction>()
+                while (playerIdToActions.size() > 0) {
+                    def playerId = positionToPlayerId.get(currentPosition);
+                    def actions = playerIdToActions.get(playerId)
+
+                    if (actions == null) {
+                        currentPosition = calcNextPosition(currentPosition, positionToPlayerId.size())
+                        continue;
+                    };
+                    def actionIndex = playerIdActionIndex.get(playerId);
+
+                    if (actionIndex == actions.size()) {
+                        playerIdToActions.remove(playerId)
+                    }
+                    else {
+                        def action = actions.get(actionIndex);
+
+                        def amount = action.betAmount
+                        if (amount == 0) {
+                            if (maxAmount > 0)
+                                action.actionType = ActionType.FOLD;
+                            else
+                                action.actionType = ActionType.CHECK;
+                        } else if (amount == maxAmount) {
+                            action.actionType = ActionType.CALL;
+                        } else if (amount > maxAmount) {
+                            maxAmount = amount;
+                            action.actionType = ActionType.RAISE;
+                        }
+                        playerIdActionIndex.put(playerId, ++actionIndex)
+                        orderedRoundAction.add(action);
+                    }
+
+                    currentPosition = calcNextPosition(currentPosition, positionToPlayerId.size())
+                }
+                round.setRoundActions(orderedRoundAction);
+            }
         }
     }
+
+    private static int calcNextPosition(int currentPosition, int numberOfPlayersInHand) {
+        currentPosition++;
+        if (currentPosition == numberOfPlayersInHand)
+            currentPosition = 0;
+
+        return currentPosition
+    }
+
 
     private static void ExtractGAMES() {
         new ExcelBuilder("data\\POKER_EPISODES_GAMES.xls").eachLine {
@@ -256,13 +267,13 @@ class PickHandPicker {
 
         playerActions.each {
             action ->
-                try {
-                    int bet = (int) (action as double);
-                    actionList.add(new RoundAction(playerId, ActionType.UNDEFINED, bet))
-                } catch (Exception e) {
-                    println("Could not parse bet of player with Id ${playerId}, actions were: ${actions}")
-                    return actionList;
-                }
+            try {
+                int bet = (int) (action as double);
+                actionList.add(new RoundAction(playerId, ActionType.UNDEFINED, bet))
+            } catch (Exception e) {
+                println("Could not parse bet of player with Id ${playerId}, actions were: ${actions}")
+                return actionList;
+            }
         }
 
         return actionList;
